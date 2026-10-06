@@ -1,0 +1,23 @@
+/* ============================================
+   LOGIN PAGE
+   ============================================ */
+
+body.login-page {
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card {
+  max-width: 400px;
+  width: 100%;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.brand-icon {
+  font-size: 3rem;
+  color: #2a5298;
+}

@@ -1,0 +1,184 @@
+/* ============================================
+   RIWAYAT PAGE
+   ============================================ */
+
+.riwayat-tabs {
+  display: flex;
+  gap: 0.35rem;
+  background: #fff;
+  padding: 0.35rem;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 1.25rem;
+  overflow-x: auto;
+}
+
+.riwayat-tabs button {
+  flex: 1;
+  min-width: fit-content;
+  background: transparent;
+  border: none;
+  padding: 0.55rem 1rem;
+  border-radius: 7px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.riwayat-tabs button:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.riwayat-tabs button.active {
+  background: #3b82f6;
+  color: #fff;
+}
+
+.filter-bar {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.filter-bar .filter-item {
+  flex: 1;
+  min-width: 150px;
+}
+
+.filter-bar .filter-item label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.25rem;
+  display: block;
+}
+
+.filter-bar .form-control,
+.filter-bar .form-select {
+  font-size: 0.85rem;
+  border-radius: 8px;
+  border-color: #e2e8f0;
+}
+
+.riwayat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  margin-bottom: 0.5rem;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.riwayat-item:hover {
+  border-color: #cbd5e1;
+  background: #fafbfc;
+}
+
+.riwayat-item .ri-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid #e2e8f0;
+}
+
+.riwayat-item .ri-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  font-size: 1.2rem;
+}
+.riwayat-item .ri-icon.rh        { background: #fee2e2; color: #b91c1c; }
+.riwayat-item .ri-icon.brittle   { background: #fef3c7; color: #b45309; }
+.riwayat-item .ri-icon.checklist { background: #dcfce7; color: #15803d; }
+
+.riwayat-item .ri-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.riwayat-item .ri-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.riwayat-item .ri-sub {
+  font-size: 0.72rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.riwayat-item .ri-right {
+  text-align: right;
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.riwayat-item .ri-right strong {
+  display: block;
+  font-size: 0.9rem;
+  color: #0f172a;
+}
+
+/* Summary cards */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.summary-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.summary-card .sc-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.summary-card .sc-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1;
+}
+
+.summary-card .sc-sub {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin-top: 0.2rem;
+}

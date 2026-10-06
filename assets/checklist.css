@@ -1,0 +1,154 @@
+/* ============================================
+   CHECKLIST PAGE
+   ============================================ */
+
+.checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  margin-bottom: 0.5rem;
+  background: #fff;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.checklist-item:hover {
+  border-color: #cbd5e1;
+}
+
+.checklist-item.checked {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.checklist-item .form-check-input {
+  width: 1.3em;
+  height: 1.3em;
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.checklist-item .form-check-input:checked {
+  background-color: #10b981;
+  border-color: #10b981;
+}
+
+.checklist-item .item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.checklist-item .item-label {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #0f172a;
+  margin: 0 0 0.2rem;
+  cursor: pointer;
+}
+
+.checklist-item .item-order {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.checklist-item .form-control {
+  font-size: 0.85rem;
+  border-radius: 7px;
+  border-color: #e2e8f0;
+}
+
+.checklist-item .form-control:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Header info */
+.info-banner {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  font-size: 0.8rem;
+  color: #1d4ed8;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.info-banner i { font-size: 1.1rem; }
+
+/* Submit bar */
+.submit-bar {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  position: sticky;
+  bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+  margin-top: 1rem;
+}
+
+.submit-bar .progress-info {
+  font-size: 0.82rem;
+  color: #64748b;
+}
+.submit-bar .progress-info strong {
+  color: #0f172a;
+}
+
+/* Riwayat checklist */
+.cl-history-item {
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  margin-bottom: 0.5rem;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.cl-history-item:hover {
+  border-color: #cbd5e1;
+  background: #fafbfc;
+}
+
+.cl-history-item .cl-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.cl-history-item .cl-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.cl-history-item .cl-sub {
+  font-size: 0.72rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.cl-history-item .cl-stats {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 0.4rem;
+}
+
+.cl-history-item .cl-stats strong {
+  color: #0f172a;
+}
