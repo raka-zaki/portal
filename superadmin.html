@@ -12,7 +12,6 @@
 </head>
 <body class="portal-page">
 
-  <!-- ============ SIDEBAR ============ -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
       <div class="logo"><i class="bi bi-clipboard2-pulse"></i></div>
@@ -21,62 +20,55 @@
         <span>Area Produksi</span>
       </div>
     </div>
-
     <div class="sidebar-label">Menu Utama</div>
     <ul class="sidebar-nav">
       <li><a href="portal.html"><i class="bi bi-house-door nav-icon"></i> Dashboard</a></li>
       <li><a href="rh-suhu.html"><i class="bi bi-thermometer-half nav-icon"></i> RH & Suhu</a></li>
       <li><a href="brittle-glass.html"><i class="bi bi-search nav-icon"></i> Brittle Glass</a></li>
-      <li><a href="checklist.html?kategori=kebersihan"><i class="bi bi-check2-square nav-icon"></i> Checklist Kebersihan</a></li>
-      <li><a href="checklist.html?kategori=alat"><i class="bi bi-archive nav-icon"></i> Checklist Alat</a></li>
+      <li><a href="checklist.html"><i class="bi bi-check2-square nav-icon"></i> Checklist</a></li>
       <li><a href="riwayat.html"><i class="bi bi-clock-history nav-icon"></i> Riwayat</a></li>
     </ul>
-
     <div class="sidebar-label">Administrator</div>
     <ul class="sidebar-nav" style="flex:0;">
       <li><a href="superadmin.html" class="active"><i class="bi bi-gear nav-icon"></i> Super Admin Panel</a></li>
     </ul>
-
     <div class="sidebar-user">
       <div class="avatar" id="avatarInitial">U</div>
       <div class="user-meta">
         <strong id="sidebarNama">User</strong>
         <span id="sidebarRole">superadmin</span>
       </div>
-      <button class="btn-logout" id="btnLogout" title="Logout">
-        <i class="bi bi-box-arrow-right"></i>
-      </button>
+      <button class="btn-logout" id="btnLogout"><i class="bi bi-box-arrow-right"></i></button>
     </div>
   </aside>
 
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-  <!-- ============ MAIN ============ -->
   <div class="main-content">
     <div class="topbar">
       <button class="btn-menu" id="btnMenu"><i class="bi bi-list"></i></button>
       <div>
         <h1 class="page-title">Super Admin Panel</h1>
-        <div class="page-sub">Kelola line, lantai, field checklist, dan user</div>
+        <div class="page-sub">Kelola line, lantai, checklist, brittle, dan user</div>
       </div>
     </div>
 
     <div class="content-area">
 
-      <!-- Tabs -->
       <div class="admin-tabs" role="tablist">
         <button class="active" data-tab="line"><i class="bi bi-diagram-3"></i> Line</button>
         <button data-tab="lantai"><i class="bi bi-building"></i> Lantai</button>
-        <button data-tab="field"><i class="bi bi-list-check"></i> Field Checklist</button>
+        <button data-tab="field"><i class="bi bi-list-check"></i> Checklist</button>
+        <button data-tab="brittle"><i class="bi bi-search"></i> Brittle Items</button>
         <button data-tab="user"><i class="bi bi-people"></i> User</button>
       </div>
 
-      <!-- ============ TAB LINE ============ -->
+      <!-- TAB LINE -->
       <div class="admin-panel" id="panel-line">
         <div class="panel-header">
           <div>
             <h5>Daftar Line Produksi</h5>
-            <p>Kelola line produksi (Moccacino, Cappucino, dll)</p>
+            <p>Kelola line + area (Mixing / Bagdump)</p>
           </div>
           <button class="btn btn-primary btn-sm" onclick="openLineModal()">
             <i class="bi bi-plus-lg"></i> Tambah Line
@@ -87,7 +79,7 @@
         </div>
       </div>
 
-      <!-- ============ TAB LANTAI ============ -->
+      <!-- TAB LANTAI -->
       <div class="admin-panel" id="panel-lantai" style="display:none;">
         <div class="panel-header">
           <div>
@@ -98,43 +90,93 @@
             <i class="bi bi-plus-lg"></i> Tambah Lantai
           </button>
         </div>
-
         <div class="mb-3">
           <label class="form-label" style="font-size:0.78rem;font-weight:600;color:#64748b;">Filter Line</label>
           <select class="form-select form-select-sm" id="filterLantaiLine" style="max-width:280px;">
             <option value="">Semua Line</option>
           </select>
         </div>
-
         <div class="admin-list" id="listLantai">
           <div class="loading-state">Memuat data...</div>
         </div>
       </div>
 
-      <!-- ============ TAB FIELD CHECKLIST ============ -->
+      <!-- TAB CHECKLIST -->
       <div class="admin-panel" id="panel-field" style="display:none;">
         <div class="panel-header">
           <div>
             <h5>Field Checklist</h5>
-            <p>Field ini yang akan muncul di form checklist petugas (berlaku semua line)</p>
+            <p>Field checklist <strong>per lantai per kategori</strong> (Area / Mesin / Alat)</p>
           </div>
           <button class="btn btn-primary btn-sm" onclick="openFieldModal()">
             <i class="bi bi-plus-lg"></i> Tambah Field
           </button>
         </div>
-
-        <div class="mb-3 d-flex gap-2 flex-wrap">
-          <button class="btn btn-sm btn-outline-secondary filter-kategori active" data-kat="all">Semua</button>
-          <button class="btn btn-sm btn-outline-secondary filter-kategori" data-kat="kebersihan">Kebersihan</button>
-          <button class="btn btn-sm btn-outline-secondary filter-kategori" data-kat="alat">Alat/Lemari</button>
+        <div class="row g-2 mb-3">
+          <div class="col-6 col-md-3">
+            <label class="form-label" style="font-size:0.78rem;font-weight:600;color:#64748b;">Filter Line</label>
+            <select class="form-select form-select-sm" id="filterFieldLine">
+              <option value="">Semua Line</option>
+            </select>
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="form-label" style="font-size:0.78rem;font-weight:600;color:#64748b;">Filter Lantai</label>
+            <select class="form-select form-select-sm" id="filterFieldLantai">
+              <option value="">Semua Lantai</option>
+            </select>
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="form-label" style="font-size:0.78rem;font-weight:600;color:#64748b;">Filter Kategori</label>
+            <select class="form-select form-select-sm" id="filterFieldKategori">
+              <option value="">Semua Kategori</option>
+              <option value="area">Area</option>
+              <option value="mesin">Mesin</option>
+              <option value="alat">Alat dalam Lemari</option>
+            </select>
+          </div>
         </div>
-
         <div class="admin-list" id="listField">
           <div class="loading-state">Memuat data...</div>
         </div>
       </div>
 
-      <!-- ============ TAB USER ============ -->
+      <!-- TAB BRITTLE -->
+      <div class="admin-panel" id="panel-brittle" style="display:none;">
+        <div class="panel-header">
+          <div>
+            <h5>Brittle Items</h5>
+            <p>Item posisi brittle per line + area + lantai</p>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openBrittleModal()">
+            <i class="bi bi-plus-lg"></i> Tambah Item
+          </button>
+        </div>
+        <div class="row g-2 mb-3">
+          <div class="col-6 col-md-3">
+            <label class="form-label" style="font-size:0.78rem;font-weight:600;color:#64748b;">Filter Line</label>
+            <select class="form-select form-select-sm" id="filterBrittleLine">
+              <option value="">Semua Line</option>
+            </select>
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="form-label" style="font-size:0.78rem;font-weight:600;color:#64748b;">Filter Area</label>
+            <select class="form-select form-select-sm" id="filterBrittleArea">
+              <option value="">Semua Area</option>
+            </select>
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="form-label" style="font-size:0.78rem;font-weight:600;color:#64748b;">Filter Lantai</label>
+            <select class="form-select form-select-sm" id="filterBrittleLantai">
+              <option value="">Semua Lantai</option>
+            </select>
+          </div>
+        </div>
+        <div class="admin-list" id="listBrittle">
+          <div class="loading-state">Memuat data...</div>
+        </div>
+      </div>
+
+      <!-- TAB USER -->
       <div class="admin-panel" id="panel-user" style="display:none;">
         <div class="panel-header">
           <div>
@@ -153,7 +195,7 @@
     </div>
   </div>
 
-  <!-- ============ MODAL LINE ============ -->
+  <!-- MODAL LINE -->
   <div class="modal fade" id="modalLine" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
@@ -165,7 +207,12 @@
           <input type="hidden" id="lineId" />
           <div class="mb-3">
             <label class="form-label">Nama Line</label>
-            <input type="text" class="form-control" id="lineNama" placeholder="cth: Moccacino" />
+            <input type="text" class="form-control" id="lineNama" placeholder="cth: Moccafrio" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Area (pisahkan dengan koma)</label>
+            <input type="text" class="form-control" id="lineAreas" placeholder="cth: Mixing, Bagdump" />
+            <small class="text-muted">Kosongkan kalau cuma 1 area (default: Mixing)</small>
           </div>
           <div class="mb-3">
             <label class="form-label">Urutan</label>
@@ -184,7 +231,7 @@
     </div>
   </div>
 
-  <!-- ============ MODAL LANTAI ============ -->
+  <!-- MODAL LANTAI -->
   <div class="modal fade" id="modalLantai" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
@@ -221,7 +268,7 @@
     </div>
   </div>
 
-  <!-- ============ MODAL FIELD ============ -->
+  <!-- MODAL FIELD CHECKLIST -->
   <div class="modal fade" id="modalField" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
@@ -232,22 +279,28 @@
         <div class="modal-body">
           <input type="hidden" id="fieldId" />
           <div class="mb-3">
-            <label class="form-label">Label Field</label>
-            <input type="text" class="form-control" id="fieldLabel" placeholder="cth: Lantai sudah disapu" />
+            <label class="form-label">Line</label>
+            <select class="form-select" id="fieldLine">
+              <option value="">-- Pilih Line --</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Lantai</label>
+            <select class="form-select" id="fieldLantai">
+              <option value="">-- Pilih Line Dulu --</option>
+            </select>
           </div>
           <div class="mb-3">
             <label class="form-label">Kategori</label>
             <select class="form-select" id="fieldKategori">
-              <option value="kebersihan">Kebersihan</option>
-              <option value="alat">Alat/Lemari</option>
+              <option value="area">Area</option>
+              <option value="mesin">Mesin</option>
+              <option value="alat">Alat dalam Lemari</option>
             </select>
           </div>
           <div class="mb-3">
-            <label class="form-label">Tipe</label>
-            <select class="form-select" id="fieldTipe">
-              <option value="boolean">Centang (Ya/Tidak)</option>
-              <option value="text">Isian Teks</option>
-            </select>
+            <label class="form-label">Label Field</label>
+            <input type="text" class="form-control" id="fieldLabel" placeholder="cth: Lantai dalam kondisi bersih" />
           </div>
           <div class="mb-3">
             <label class="form-label">Urutan</label>
@@ -266,7 +319,70 @@
     </div>
   </div>
 
-  <!-- ============ MODAL USER ============ -->
+  <!-- MODAL BRITTLE -->
+  <div class="modal fade" id="modalBrittle" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h6 class="modal-title" id="modalBrittleTitle">Tambah Brittle Item</h6>
+          <button class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="brittleId" />
+          <div class="mb-3">
+            <label class="form-label">Line</label>
+            <select class="form-select" id="brittleLine">
+              <option value="">-- Pilih Line --</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Area</label>
+            <select class="form-select" id="brittleArea">
+              <option value="">-- Pilih Line Dulu --</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Lantai</label>
+            <select class="form-select" id="brittleLantai">
+              <option value="">-- Pilih Line Dulu --</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Posisi</label>
+            <input type="text" class="form-control" id="brittlePosisi" placeholder="cth: Box Chainvey Base MF 1" />
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label">Jenis</label>
+              <select class="form-select" id="brittleJenis">
+                <option value="A">A — Acrylic</option>
+                <option value="K">K — Kaca</option>
+                <option value="S">S — Stainless</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label">Total</label>
+              <input type="number" class="form-control" id="brittleTotal" value="1" min="1" />
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Urutan</label>
+            <input type="number" class="form-control" id="brittleUrutan" value="1" min="1" />
+          </div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="brittleAktif" checked />
+            <label class="form-check-label" for="brittleAktif">Aktif</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+          <button class="btn btn-primary btn-sm" id="btnSaveBrittle">Simpan</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL USER -->
   <div class="modal fade" id="modalUser" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">

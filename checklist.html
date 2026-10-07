@@ -26,8 +26,7 @@
       <li><a href="portal.html"><i class="bi bi-house-door nav-icon"></i> Dashboard</a></li>
       <li><a href="rh-suhu.html"><i class="bi bi-thermometer-half nav-icon"></i> RH & Suhu</a></li>
       <li><a href="brittle-glass.html"><i class="bi bi-search nav-icon"></i> Brittle Glass</a></li>
-      <li><a href="checklist.html?kategori=kebersihan" id="navKebersihan"><i class="bi bi-check2-square nav-icon"></i> Checklist Kebersihan</a></li>
-      <li><a href="checklist.html?kategori=alat" id="navAlat"><i class="bi bi-archive nav-icon"></i> Checklist Alat</a></li>
+      <li><a href="checklist.html"><i class="bi bi-check2-square nav-icon"></i> Checklist</a></li>
       <li><a href="riwayat.html"><i class="bi bi-clock-history nav-icon"></i> Riwayat</a></li>
     </ul>
     <div class="sidebar-label" id="adminLabel" style="display:none;">Administrator</div>
@@ -50,8 +49,8 @@
     <div class="topbar">
       <button class="btn-menu" id="btnMenu"><i class="bi bi-list"></i></button>
       <div>
-        <h1 class="page-title" id="pageTitle">Checklist</h1>
-        <div class="page-sub" id="pageSub">Pengecekan per lantai</div>
+        <h1 class="page-title">Checklist</h1>
+        <div class="page-sub">Ceklis per lantai · ✓ / ✗ / —</div>
       </div>
       <div class="topbar-right">
         <span class="shift-pill">
@@ -63,21 +62,31 @@
     <div class="content-area">
       <div class="row g-4">
 
-        <!-- FORM -->
         <div class="col-12 col-lg-7">
           <div class="form-card">
-            <h6 class="fw-bold mb-3" style="color:#0f172a;">
-              <i class="bi bi-plus-circle text-primary"></i> Input Baru
-            </h6>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h6 class="fw-bold mb-0" style="color:#0f172a;">
+                <i class="bi bi-plus-circle text-primary"></i> <span id="formMode">Input Baru</span>
+              </h6>
+              <button class="btn btn-sm btn-outline-secondary" id="btnBatalEdit" style="display:none;">
+                <i class="bi bi-x-lg"></i> Batal Edit
+              </button>
+            </div>
 
             <div class="row g-2 mb-3">
-              <div class="col-12 col-md-6">
-                <label class="form-label">Lantai</label>
-                <select class="form-select" id="inputLantai" required>
-                  <option value="">-- Pilih Lantai --</option>
+              <div class="col-12 col-md-4">
+                <label class="form-label">Line</label>
+                <select class="form-select" id="inputLine" required>
+                  <option value="">-- Pilih Line --</option>
                 </select>
               </div>
-              <div class="col-12 col-md-6">
+              <div class="col-12 col-md-4">
+                <label class="form-label">Lantai</label>
+                <select class="form-select" id="inputLantai" required disabled>
+                  <option value="">-- Pilih Line Dulu --</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-4">
                 <label class="form-label">Shift</label>
                 <select class="form-select" id="inputShift" required>
                   <option value="1">Shift 1</option>
@@ -87,23 +96,39 @@
               </div>
             </div>
 
+            <div class="checklist-tabs" id="checklistTabs" style="display:none;">
+              <button type="button" class="checklist-tab active" data-kategori="area">
+                <i class="bi bi-geo-alt"></i> Area
+                <span class="tab-count" id="count-area">0</span>
+              </button>
+              <button type="button" class="checklist-tab" data-kategori="mesin">
+                <i class="bi bi-gear-wide-connected"></i> Mesin
+                <span class="tab-count" id="count-mesin">0</span>
+              </button>
+              <button type="button" class="checklist-tab" data-kategori="alat">
+                <i class="bi bi-archive"></i> Alat dalam Lemari
+                <span class="tab-count" id="count-alat">0</span>
+              </button>
+            </div>
+
             <div class="mini-title">Item Checklist</div>
             <div id="listChecklist">
-              <div class="loading-state">Memuat field...</div>
+              <div class="loading-state">Pilih line & lantai dulu...</div>
             </div>
 
             <div class="submit-bar">
               <div class="progress-info">
-                Terisi: <strong id="progressText">0 / 0</strong>
+                ✓ : <strong id="progressOk">0</strong> · 
+                ✗ : <strong id="progressNok">0</strong> · 
+                Total: <strong id="progressTotal">0</strong>
               </div>
               <button class="btn btn-primary" id="btnSubmit" disabled>
-                <i class="bi bi-send"></i> Simpan
+                <i class="bi bi-send"></i> Simpan <span id="submitKategori">Area</span>
               </button>
             </div>
           </div>
         </div>
 
-        <!-- RIWAYAT -->
         <div class="col-12 col-lg-5">
           <div class="form-card">
             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -124,7 +149,6 @@
     </div>
   </div>
 
-  <!-- MODAL DETAIL -->
   <div class="modal fade" id="modalDetail" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content">

@@ -2,7 +2,7 @@ import { db, auth } from "./firebase-config.js";
 import { protectPage, logout } from "./guard.js";
 import {
   collection, doc, addDoc, updateDoc, deleteDoc,
-  getDocs, query, orderBy, serverTimestamp, setDoc
+  getDocs, query, orderBy, where, serverTimestamp, setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import {
   createUserWithEmailAndPassword, signOut
@@ -10,7 +10,6 @@ import {
 
 const DOMAIN = "@produksi.local";
 
-// ---------- GUARD ----------
 const user = await protectPage(["superadmin"]);
 document.getElementById("sidebarNama").textContent = user.nama || user.email;
 document.getElementById("sidebarRole").textContent = user.role;
@@ -27,13 +26,14 @@ overlay.addEventListener("click", () => {
 });
 document.getElementById("btnLogout").addEventListener("click", logout);
 
-// ---------- TABS ----------
+// TABS
 const tabs = document.querySelectorAll(".admin-tabs button");
 const panels = {
-  line:   document.getElementById("panel-line"),
-  lantai: document.getElementById("panel-lantai"),
-  field:  document.getElementById("panel-field"),
-  user:   document.getElementById("panel-user"),
+  line:    document.getElementById("panel-line"),
+  lantai:  document.getElementById("panel-lantai"),
+  field:   document.getElementById("panel-field"),
+  brittle: document.getElementById("panel-brittle"),
+  user:    document.getElementById("panel-user"),
 };
 tabs.forEach(btn => {
   btn.addEventListener("click", () => {
@@ -44,10 +44,11 @@ tabs.forEach(btn => {
   });
 });
 
-const modalLine   = new bootstrap.Modal("#modalLine");
-const modalLantai = new bootstrap.Modal("#modalLantai");
-const modalField  = new bootstrap.Modal("#modalField");
-const modalUser   = new bootstrap.Modal("#modalUser");
+const modalLine    = new bootstrap.Modal("#modalLine");
+const modalLantai  = new bootstrap.Modal("#modalLantai");
+const modalField   = new bootstrap.Modal("#modalField");
+const modalBrittle = new bootstrap.Modal("#modalBrittle");
+const modalUser    = new bootstrap.Modal("#modalUser");
 
 // =========================================================
 // ============== LINE =====================================
@@ -62,8 +63,7 @@ async function loadLine() {
     const snap = await getDocs(q);
     lineCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     renderLine();
-    refreshDropdownLine();
-    refreshFilterLine();
+    refreshLineDropdowns();
   } catch (err) {
     box.innerHTML = `<div class="empty-state"><i class="bi bi-exclamation-triangle"></i><p>Gagal memuat: ${err.message}</p></div>`;
   }
@@ -80,10 +80,10 @@ function renderLine() {
       <div class="item-icon"><i class="bi bi-diagram-3"></i></div>
       <div class="item-body">
         <p class="item-title">${escapeHtml(l.nama)}</p>
-        <p class="item-sub">Urutan: ${l.urutan} · 
-          <span class="badge-status ${l.aktif ? 'aktif' : 'nonaktif'}">
-            ${l.aktif ? 'Aktif' : 'Nonaktif'}
-          </span>
+        <p class="item-sub">
+          Area: ${(l.areas || ["Mixing"]).join(", ")} · 
+          Urutan: ${l.urutan} · 
+          <span class="badge-status ${l.aktif ? 'aktif' : 'nonaktif'}">${l.aktif ? 'Aktif' : 'Nonaktif'}</span>
         </p>
       </div>
       <div class="item-actions">
@@ -98,6 +98,7 @@ window.openLineModal = () => {
   document.getElementById("modalLineTitle").textContent = "Tambah Line";
   document.getElementById("lineId").value = "";
   document.getElementById("lineNama").value = "";
+  document.getElementById("lineAreas").value = "";
   document.getElementById("lineUrutan").value = (lineCache.length + 1);
   document.getElementById("lineAktif").checked = true;
   modalLine.show();
@@ -109,6 +110,7 @@ window.editLine = (id) => {
   document.getElementById("modalLineTitle").textContent = "Edit Line";
   document.getElementById("lineId").value = l.id;
   document.getElementById("lineNama").value = l.nama;
+  document.getElementById("lineAreas").value = (l.areas || ["Mixing"]).join(", ");
   document.getElementById("lineUrutan").value = l.urutan;
   document.getElementById("lineAktif").checked = l.aktif;
   modalLine.show();
@@ -116,7 +118,7 @@ window.editLine = (id) => {
 
 window.hapusLine = async (id) => {
   const l = lineCache.find(x => x.id === id);
-  if (!confirm(`Hapus line "${l.nama}"?\n\nCatatan: lantai di line ini tidak otomatis terhapus.`)) return;
+  if (!confirm(`Hapus line "${l.nama}"?`)) return;
   await deleteDoc(doc(db, "line", id));
   loadLine();
   loadLantai();
@@ -125,17 +127,22 @@ window.hapusLine = async (id) => {
 document.getElementById("btnSaveLine").addEventListener("click", async () => {
   const id = document.getElementById("lineId").value;
   const nama = document.getElementById("lineNama").value.trim();
+  const areasRaw = document.getElementById("lineAreas").value.trim();
   const urutan = Number(document.getElementById("lineUrutan").value);
   const aktif = document.getElementById("lineAktif").checked;
   if (!nama) return alert("Nama line wajib diisi");
+
+  const areas = areasRaw
+    ? areasRaw.split(",").map(a => a.trim()).filter(Boolean)
+    : ["Mixing"];
 
   const btn = document.getElementById("btnSaveLine");
   btn.disabled = true;
   try {
     if (id) {
-      await updateDoc(doc(db, "line", id), { nama, urutan, aktif });
+      await updateDoc(doc(db, "line", id), { nama, areas, urutan, aktif });
     } else {
-      await addDoc(collection(db, "line"), { nama, urutan, aktif, createdAt: serverTimestamp() });
+      await addDoc(collection(db, "line"), { nama, areas, urutan, aktif, createdAt: serverTimestamp() });
     }
     modalLine.hide();
     loadLine();
@@ -146,21 +153,16 @@ document.getElementById("btnSaveLine").addEventListener("click", async () => {
   }
 });
 
-function refreshDropdownLine() {
-  const opt = lineCache
-    .filter(l => l.aktif !== false)
-    .map(l => `<option value="${l.id}">${escapeHtml(l.nama)}</option>`)
-    .join("");
-  document.getElementById("lantaiLine").innerHTML =
-    '<option value="">-- Pilih Line --</option>' + opt;
-}
+function refreshLineDropdowns() {
+  const optAll = lineCache.map(l => `<option value="${l.id}">${escapeHtml(l.nama)}</option>`).join("");
+  const optAktif = lineCache.filter(l => l.aktif !== false).map(l => `<option value="${l.id}">${escapeHtml(l.nama)}</option>`).join("");
 
-function refreshFilterLine() {
-  const opt = lineCache
-    .map(l => `<option value="${l.id}">${escapeHtml(l.nama)}</option>`)
-    .join("");
-  document.getElementById("filterLantaiLine").innerHTML =
-    '<option value="">Semua Line</option>' + opt;
+  document.getElementById("filterLantaiLine").innerHTML = '<option value="">Semua Line</option>' + optAll;
+  document.getElementById("filterFieldLine").innerHTML = '<option value="">Semua Line</option>' + optAll;
+  document.getElementById("filterBrittleLine").innerHTML = '<option value="">Semua Line</option>' + optAll;
+  document.getElementById("lantaiLine").innerHTML = '<option value="">-- Pilih Line --</option>' + optAktif;
+  document.getElementById("fieldLine").innerHTML = '<option value="">-- Pilih Line --</option>' + optAktif;
+  document.getElementById("brittleLine").innerHTML = '<option value="">-- Pilih Line --</option>' + optAktif;
 }
 
 // =========================================================
@@ -184,7 +186,6 @@ async function loadLantai() {
 function renderLantai() {
   const box = document.getElementById("listLantai");
   const filterLineId = document.getElementById("filterLantaiLine").value;
-
   let data = lantaiCache;
   if (filterLineId) data = data.filter(l => l.lineId === filterLineId);
 
@@ -202,11 +203,8 @@ function renderLantai() {
         <div class="item-body">
           <p class="item-title">${escapeHtml(l.nama)}</p>
           <p class="item-sub">
-            Line: <strong>${escapeHtml(lineNama)}</strong> · 
-            Urutan: ${l.urutan} · 
-            <span class="badge-status ${l.aktif ? 'aktif' : 'nonaktif'}">
-              ${l.aktif ? 'Aktif' : 'Nonaktif'}
-            </span>
+            Line: <strong>${escapeHtml(lineNama)}</strong> · Urutan: ${l.urutan} · 
+            <span class="badge-status ${l.aktif ? 'aktif' : 'nonaktif'}">${l.aktif ? 'Aktif' : 'Nonaktif'}</span>
           </p>
         </div>
         <div class="item-actions">
@@ -219,10 +217,7 @@ function renderLantai() {
 }
 
 window.openLantaiModal = () => {
-  if (!lineCache.length) {
-    alert("Bikin line dulu sebelum tambah lantai.");
-    return;
-  }
+  if (!lineCache.length) return alert("Bikin line dulu.");
   document.getElementById("modalLantaiTitle").textContent = "Tambah Lantai";
   document.getElementById("lantaiId").value = "";
   document.getElementById("lantaiLine").value = "";
@@ -257,7 +252,6 @@ document.getElementById("btnSaveLantai").addEventListener("click", async () => {
   const nama = document.getElementById("lantaiNama").value.trim();
   const urutan = Number(document.getElementById("lantaiUrutan").value);
   const aktif = document.getElementById("lantaiAktif").checked;
-
   if (!lineId) return alert("Pilih line dulu");
   if (!nama) return alert("Nama lantai wajib diisi");
 
@@ -270,9 +264,7 @@ document.getElementById("btnSaveLantai").addEventListener("click", async () => {
     if (id) {
       await updateDoc(doc(db, "lantai", id), { lineId, lineNama, nama, urutan, aktif });
     } else {
-      await addDoc(collection(db, "lantai"), {
-        lineId, lineNama, nama, urutan, aktif, createdAt: serverTimestamp()
-      });
+      await addDoc(collection(db, "lantai"), { lineId, lineNama, nama, urutan, aktif, createdAt: serverTimestamp() });
     }
     modalLantai.hide();
     loadLantai();
@@ -289,7 +281,6 @@ document.getElementById("filterLantaiLine").addEventListener("change", renderLan
 // ============== FIELD CHECKLIST ==========================
 // =========================================================
 let fieldCache = [];
-let filterKategori = "all";
 
 async function loadField() {
   const box = document.getElementById("listField");
@@ -306,53 +297,72 @@ async function loadField() {
 
 function renderField() {
   const box = document.getElementById("listField");
-  const data = filterKategori === "all"
-    ? fieldCache
-    : fieldCache.filter(f => f.kategori === filterKategori);
+  const fl = document.getElementById("filterFieldLine").value;
+  const flt = document.getElementById("filterFieldLantai").value;
+  const fk = document.getElementById("filterFieldKategori").value;
+
+  let data = fieldCache;
+  if (fl) data = data.filter(f => f.lineId === fl);
+  if (flt) data = data.filter(f => f.lantaiId === flt);
+  if (fk) data = data.filter(f => (f.kategori || "area") === fk);
 
   if (!data.length) {
-    box.innerHTML = '<div class="empty-state"><i class="bi bi-list-check"></i><p>Belum ada field untuk kategori ini.</p></div>';
+    box.innerHTML = '<div class="empty-state"><i class="bi bi-list-check"></i><p>Belum ada field checklist.</p></div>';
     return;
   }
 
-  box.innerHTML = data.map(f => `
-    <div class="admin-item">
-      <div class="item-icon">
-        <i class="bi ${f.tipe === 'text' ? 'bi-input-cursor-text' : 'bi-check2-square'}"></i>
+  const kategoriLabel = { area: "Area", mesin: "Mesin", alat: "Alat" };
+  const kategoriColor = { area: "bg-primary", mesin: "bg-warning text-dark", alat: "bg-success" };
+
+  box.innerHTML = data.map(f => {
+    const line = lineCache.find(x => x.id === f.lineId);
+    const lantai = lantaiCache.find(x => x.id === f.lantaiId);
+    const kat = f.kategori || "area";
+    return `
+      <div class="admin-item">
+        <div class="item-icon"><i class="bi bi-check2-square"></i></div>
+        <div class="item-body">
+          <p class="item-title">
+            <span class="badge ${kategoriColor[kat] || 'bg-secondary'} me-1" style="font-size:0.65rem;">
+              ${kategoriLabel[kat] || kat}
+            </span>
+            ${escapeHtml(f.label)}
+          </p>
+          <p class="item-sub">
+            ${escapeHtml(line?.nama || "-")} · ${escapeHtml(lantai?.nama || "-")} · 
+            urutan ${f.urutan} · 
+            <span class="badge-status ${f.aktif ? 'aktif' : 'nonaktif'}">${f.aktif ? 'Aktif' : 'Nonaktif'}</span>
+          </p>
+        </div>
+        <div class="item-actions">
+          <button class="btn-icon" onclick="editField('${f.id}')"><i class="bi bi-pencil"></i></button>
+          <button class="btn-icon danger" onclick="hapusField('${f.id}')"><i class="bi bi-trash"></i></button>
+        </div>
       </div>
-      <div class="item-body">
-        <p class="item-title">${escapeHtml(f.label)}</p>
-        <p class="item-sub">
-          ${f.kategori} · ${f.tipe} · urutan ${f.urutan} · 
-          <span class="badge-status ${f.aktif ? 'aktif' : 'nonaktif'}">
-            ${f.aktif ? 'Aktif' : 'Nonaktif'}
-          </span>
-        </p>
-      </div>
-      <div class="item-actions">
-        <button class="btn-icon" onclick="editField('${f.id}')"><i class="bi bi-pencil"></i></button>
-        <button class="btn-icon danger" onclick="hapusField('${f.id}')"><i class="bi bi-trash"></i></button>
-      </div>
-    </div>
-  `).join("");
+    `;
+  }).join("");
 }
 
-document.querySelectorAll(".filter-kategori").forEach(btn => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".filter-kategori").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    filterKategori = btn.dataset.kat;
-    renderField();
-  });
+document.getElementById("filterFieldLine").addEventListener("change", () => {
+  const lineId = document.getElementById("filterFieldLine").value;
+  const data = lineId ? lantaiCache.filter(l => l.lineId === lineId) : lantaiCache;
+  document.getElementById("filterFieldLantai").innerHTML =
+    '<option value="">Semua Lantai</option>' +
+    data.map(l => `<option value="${l.id}">${escapeHtml(l.nama)}</option>`).join("");
+  renderField();
 });
+document.getElementById("filterFieldLantai").addEventListener("change", renderField);
+document.getElementById("filterFieldKategori").addEventListener("change", renderField);
 
 window.openFieldModal = () => {
+  if (!lineCache.length) return alert("Bikin line dulu.");
   document.getElementById("modalFieldTitle").textContent = "Tambah Field";
   document.getElementById("fieldId").value = "";
+  document.getElementById("fieldLine").value = "";
+  document.getElementById("fieldLantai").innerHTML = '<option value="">-- Pilih Line Dulu --</option>';
+  document.getElementById("fieldKategori").value = "area";
   document.getElementById("fieldLabel").value = "";
-  document.getElementById("fieldKategori").value = "kebersihan";
-  document.getElementById("fieldTipe").value = "boolean";
-  document.getElementById("fieldUrutan").value = (fieldCache.length + 1);
+  document.getElementById("fieldUrutan").value = 1;
   document.getElementById("fieldAktif").checked = true;
   modalField.show();
 };
@@ -362,9 +372,14 @@ window.editField = (id) => {
   if (!f) return;
   document.getElementById("modalFieldTitle").textContent = "Edit Field";
   document.getElementById("fieldId").value = f.id;
+  document.getElementById("fieldLine").value = f.lineId;
+  const data = lantaiCache.filter(l => l.lineId === f.lineId);
+  document.getElementById("fieldLantai").innerHTML =
+    '<option value="">-- Pilih Lantai --</option>' +
+    data.map(l => `<option value="${l.id}">${escapeHtml(l.nama)}</option>`).join("");
+  document.getElementById("fieldLantai").value = f.lantaiId;
+  document.getElementById("fieldKategori").value = f.kategori || "area";
   document.getElementById("fieldLabel").value = f.label;
-  document.getElementById("fieldKategori").value = f.kategori;
-  document.getElementById("fieldTipe").value = f.tipe;
   document.getElementById("fieldUrutan").value = f.urutan;
   document.getElementById("fieldAktif").checked = f.aktif;
   modalField.show();
@@ -377,26 +392,220 @@ window.hapusField = async (id) => {
   loadField();
 };
 
+document.getElementById("fieldLine").addEventListener("change", () => {
+  const lineId = document.getElementById("fieldLine").value;
+  const data = lantaiCache.filter(l => l.lineId === lineId);
+  document.getElementById("fieldLantai").innerHTML =
+    '<option value="">-- Pilih Lantai --</option>' +
+    data.map(l => `<option value="${l.id}">${escapeHtml(l.nama)}</option>`).join("");
+});
+
 document.getElementById("btnSaveField").addEventListener("click", async () => {
   const id = document.getElementById("fieldId").value;
-  const label = document.getElementById("fieldLabel").value.trim();
+  const lineId = document.getElementById("fieldLine").value;
+  const lantaiId = document.getElementById("fieldLantai").value;
   const kategori = document.getElementById("fieldKategori").value;
-  const tipe = document.getElementById("fieldTipe").value;
+  const label = document.getElementById("fieldLabel").value.trim();
   const urutan = Number(document.getElementById("fieldUrutan").value);
   const aktif = document.getElementById("fieldAktif").checked;
+
+  if (!lineId) return alert("Pilih line dulu");
+  if (!lantaiId) return alert("Pilih lantai dulu");
   if (!label) return alert("Label wajib diisi");
+
+  const line = lineCache.find(x => x.id === lineId);
+  const lantai = lantaiCache.find(x => x.id === lantaiId);
 
   const btn = document.getElementById("btnSaveField");
   btn.disabled = true;
   try {
+    const data = {
+      lineId, lineNama: line?.nama || "",
+      lantaiId, lantaiNama: lantai?.nama || "",
+      kategori,
+      label, urutan, aktif
+    };
     if (id) {
-      await updateDoc(doc(db, "checklistFields", id), { label, kategori, tipe, urutan, aktif });
+      await updateDoc(doc(db, "checklistFields", id), data);
     } else {
-      await addDoc(collection(db, "checklistFields"),
-        { label, kategori, tipe, urutan, aktif, createdAt: serverTimestamp() });
+      await addDoc(collection(db, "checklistFields"), { ...data, createdAt: serverTimestamp() });
     }
     modalField.hide();
     loadField();
+  } catch (err) {
+    alert("Gagal simpan: " + err.message);
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+// =========================================================
+// ============== BRITTLE ITEMS ============================
+// =========================================================
+let brittleCache = [];
+
+async function loadBrittle() {
+  const box = document.getElementById("listBrittle");
+  box.innerHTML = '<div class="loading-state">Memuat data...</div>';
+  try {
+    const q = query(collection(db, "brittleItems"), orderBy("urutan", "asc"));
+    const snap = await getDocs(q);
+    brittleCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderBrittle();
+  } catch (err) {
+    box.innerHTML = `<div class="empty-state"><i class="bi bi-exclamation-triangle"></i><p>Gagal memuat: ${err.message}</p></div>`;
+  }
+}
+
+function renderBrittle() {
+  const box = document.getElementById("listBrittle");
+  const fl = document.getElementById("filterBrittleLine").value;
+  const fa = document.getElementById("filterBrittleArea").value;
+  const flt = document.getElementById("filterBrittleLantai").value;
+
+  let data = brittleCache;
+  if (fl) data = data.filter(b => b.lineId === fl);
+  if (fa) data = data.filter(b => b.area === fa);
+  if (flt) data = data.filter(b => b.lantaiId === flt);
+
+  if (!data.length) {
+    box.innerHTML = '<div class="empty-state"><i class="bi bi-search"></i><p>Belum ada brittle item.</p></div>';
+    return;
+  }
+
+  box.innerHTML = data.map(b => {
+    const line = lineCache.find(x => x.id === b.lineId);
+    return `
+      <div class="admin-item">
+        <div class="item-icon"><i class="bi bi-search"></i></div>
+        <div class="item-body">
+          <p class="item-title">${escapeHtml(b.posisi)}</p>
+          <p class="item-sub">
+            ${escapeHtml(line?.nama || "-")} · ${escapeHtml(b.area || "-")} · 
+            ${escapeHtml(b.lantaiNama || "-")} · 
+            Jenis ${b.jenis} · Total ${b.total} · urutan ${b.urutan} · 
+            <span class="badge-status ${b.aktif ? 'aktif' : 'nonaktif'}">${b.aktif ? 'Aktif' : 'Nonaktif'}</span>
+          </p>
+        </div>
+        <div class="item-actions">
+          <button class="btn-icon" onclick="editBrittle('${b.id}')"><i class="bi bi-pencil"></i></button>
+          <button class="btn-icon danger" onclick="hapusBrittle('${b.id}')"><i class="bi bi-trash"></i></button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+document.getElementById("filterBrittleLine").addEventListener("change", () => {
+  const lineId = document.getElementById("filterBrittleLine").value;
+  const data = lineId ? lantaiCache.filter(l => l.lineId === lineId) : lantaiCache;
+  document.getElementById("filterBrittleLantai").innerHTML =
+    '<option value="">Semua Lantai</option>' +
+    data.map(l => `<option value="${l.id}">${escapeHtml(l.nama)}</option>`).join("");
+  renderBrittle();
+});
+document.getElementById("filterBrittleArea").addEventListener("change", renderBrittle);
+document.getElementById("filterBrittleLantai").addEventListener("change", renderBrittle);
+
+window.openBrittleModal = () => {
+  if (!lineCache.length) return alert("Bikin line dulu.");
+  document.getElementById("modalBrittleTitle").textContent = "Tambah Brittle Item";
+  document.getElementById("brittleId").value = "";
+  document.getElementById("brittleLine").value = "";
+  document.getElementById("brittleArea").innerHTML = '<option value="">-- Pilih Line Dulu --</option>';
+  document.getElementById("brittleLantai").innerHTML = '<option value="">-- Pilih Line Dulu --</option>';
+  document.getElementById("brittlePosisi").value = "";
+  document.getElementById("brittleJenis").value = "A";
+  document.getElementById("brittleTotal").value = 1;
+  document.getElementById("brittleUrutan").value = 1;
+  document.getElementById("brittleAktif").checked = true;
+  modalBrittle.show();
+};
+
+window.editBrittle = (id) => {
+  const b = brittleCache.find(x => x.id === id);
+  if (!b) return;
+  document.getElementById("modalBrittleTitle").textContent = "Edit Brittle Item";
+  document.getElementById("brittleId").value = b.id;
+  document.getElementById("brittleLine").value = b.lineId;
+
+  const line = lineCache.find(x => x.id === b.lineId);
+  const areas = line?.areas || ["Mixing"];
+  document.getElementById("brittleArea").innerHTML =
+    '<option value="">-- Pilih Area --</option>' +
+    areas.map(a => `<option value="${a}">${a}</option>`).join("");
+  document.getElementById("brittleArea").value = b.area;
+
+  const lantaiData = lantaiCache.filter(l => l.lineId === b.lineId);
+  document.getElementById("brittleLantai").innerHTML =
+    '<option value="">-- Pilih Lantai --</option>' +
+    lantaiData.map(l => `<option value="${l.id}">${escapeHtml(l.nama)}</option>`).join("");
+  document.getElementById("brittleLantai").value = b.lantaiId || "";
+
+  document.getElementById("brittlePosisi").value = b.posisi;
+  document.getElementById("brittleJenis").value = b.jenis;
+  document.getElementById("brittleTotal").value = b.total;
+  document.getElementById("brittleUrutan").value = b.urutan;
+  document.getElementById("brittleAktif").checked = b.aktif;
+  modalBrittle.show();
+};
+
+window.hapusBrittle = async (id) => {
+  const b = brittleCache.find(x => x.id === id);
+  if (!confirm(`Hapus brittle item "${b.posisi}"?`)) return;
+  await deleteDoc(doc(db, "brittleItems", id));
+  loadBrittle();
+};
+
+document.getElementById("brittleLine").addEventListener("change", (e) => {
+  const lineId = e.target.value;
+  const line = lineCache.find(x => x.id === lineId);
+  const areas = line?.areas || ["Mixing"];
+  document.getElementById("brittleArea").innerHTML =
+    '<option value="">-- Pilih Area --</option>' +
+    areas.map(a => `<option value="${a}">${a}</option>`).join("");
+
+  const lantaiData = lantaiCache.filter(l => l.lineId === lineId);
+  document.getElementById("brittleLantai").innerHTML =
+    '<option value="">-- Pilih Lantai --</option>' +
+    lantaiData.map(l => `<option value="${l.id}">${escapeHtml(l.nama)}</option>`).join("");
+});
+
+document.getElementById("btnSaveBrittle").addEventListener("click", async () => {
+  const id = document.getElementById("brittleId").value;
+  const lineId = document.getElementById("brittleLine").value;
+  const area = document.getElementById("brittleArea").value;
+  const lantaiId = document.getElementById("brittleLantai").value;
+  const posisi = document.getElementById("brittlePosisi").value.trim();
+  const jenis = document.getElementById("brittleJenis").value;
+  const total = Number(document.getElementById("brittleTotal").value);
+  const urutan = Number(document.getElementById("brittleUrutan").value);
+  const aktif = document.getElementById("brittleAktif").checked;
+
+  if (!lineId) return alert("Pilih line dulu");
+  if (!area) return alert("Pilih area dulu");
+  if (!lantaiId) return alert("Pilih lantai dulu");
+  if (!posisi) return alert("Posisi wajib diisi");
+
+  const line = lineCache.find(x => x.id === lineId);
+  const lantai = lantaiCache.find(x => x.id === lantaiId);
+
+  const btn = document.getElementById("btnSaveBrittle");
+  btn.disabled = true;
+  try {
+    const data = {
+      lineId, lineNama: line?.nama || "",
+      area,
+      lantaiId, lantaiNama: lantai?.nama || "",
+      posisi, jenis, total, urutan, aktif
+    };
+    if (id) {
+      await updateDoc(doc(db, "brittleItems", id), data);
+    } else {
+      await addDoc(collection(db, "brittleItems"), { ...data, createdAt: serverTimestamp() });
+    }
+    modalBrittle.hide();
+    loadBrittle();
   } catch (err) {
     alert("Gagal simpan: " + err.message);
   } finally {
@@ -473,7 +682,7 @@ window.editUser = (id) => {
 window.hapusUser = async (id) => {
   if (id === user.uid) return alert("Ga bisa hapus akun sendiri.");
   const u = userCache.find(x => x.id === id);
-  if (!confirm(`Hapus user "${u.nama || u.username}"?\n\nCatatan: ini hanya hapus data di Firestore, akun Auth harus dihapus manual dari Firebase Console.`)) return;
+  if (!confirm(`Hapus user "${u.nama || u.username}"?`)) return;
   await deleteDoc(doc(db, "users", id));
   loadUser();
 };
@@ -536,5 +745,6 @@ function escapeHtml(str) {
 // =========================================================
 await loadLine();
 await loadLantai();
-loadField();
+await loadField();
+await loadBrittle();
 loadUser();

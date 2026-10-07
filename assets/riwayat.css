@@ -175,6 +175,40 @@
   font-weight: 700;
   color: #0f172a;
   line-height: 1;
+}/* Tombol hapus di riwayat */
+.riwayat-item {
+  position: relative;
+}
+
+.riwayat-item .ri-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex-shrink: 0;
+  align-self: center;
+  margin-left: 0.5rem;
+}
+
+.riwayat-item .btn-action {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #64748b;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 0.8rem;
+  padding: 0;
+}
+
+.riwayat-item .btn-action.danger:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+  background: #fef2f2;
+  transform: translateY(-1px);
 }
 
 .summary-card .sc-sub {

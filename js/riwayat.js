@@ -1,9 +1,10 @@
 import { db } from "./firebase-config.js";
-import { protectPage, logout,highlightSidebar } from "./guard.js";
+import { protectPage, logout } from "./guard.js";
 import {
-  collection, getDocs, query, orderBy
+  collection, getDocs, query, orderBy, where, deleteDoc, doc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-highlightSidebar("riwayat");
+
+// ---------- GUARD ----------
 const user = await protectPage();
 document.getElementById("sidebarNama").textContent = user.nama || user.email;
 document.getElementById("sidebarRole").textContent = user.role;
@@ -24,6 +25,14 @@ if (user.role === "superadmin") {
 }
 document.getElementById("btnLogout").addEventListener("click", logout);
 
+// ---------- KONSTANTA ----------
+const KATEGORI_LABEL = { area: "Area", mesin: "Mesin", alat: "Alat" };
+const KATEGORI_COLOR = {
+  area: "bg-primary",
+  mesin: "bg-warning text-dark",
+  alat: "bg-success",
+};
+
 // ---------- STATE ----------
 let allData = [];
 let filteredData = [];
@@ -31,7 +40,13 @@ let currentTab = "all";
 let lineCache = [];
 let lantaiCache = [];
 
-// ---------- LOAD LINE & LANTAI ----------
+// ---------- CEK BOLEH EDIT/HAPUS ----------
+function bolehEdit(item) {
+  if (user.role === "superadmin" || user.role === "supervisor") return true;
+  return item.petugasId === user.uid;
+}
+
+// ---------- LOAD LINE ----------
 async function loadLine() {
   const q = query(collection(db, "line"), orderBy("urutan", "asc"));
   const snap = await getDocs(q);
@@ -40,6 +55,7 @@ async function loadLine() {
   document.getElementById("filterLine").insertAdjacentHTML("beforeend", opt);
 }
 
+// ---------- LOAD SEMUA LANTAI ----------
 async function loadLantaiAll() {
   const q = query(collection(db, "lantai"), orderBy("urutan", "asc"));
   const snap = await getDocs(q);
@@ -48,7 +64,7 @@ async function loadLantaiAll() {
 
 function refreshFilterLantai(lineId) {
   const sel = document.getElementById("filterLantai");
-  const data = lineId ? lantaiCache.filter(l => l.lineId === lineId) : [];
+  const data = lineId ? lantaiCache.filter(l => l.lineId === lineId) : lantaiCache;
   if (!data.length) {
     sel.innerHTML = '<option value="">Semua Lantai</option>';
     return;
@@ -73,7 +89,7 @@ async function loadAll() {
   try {
     const [rhSnap, bgSnap, clSnap] = await Promise.all([
       getDocs(collection(db, "rhSuhu")),
-      getDocs(collection(db, "brittleGlass")),
+      getDocs(collection(db, "brittleSubmissions")),
       getDocs(collection(db, "checklistSubmissions")),
     ]);
 
@@ -95,6 +111,7 @@ async function loadAll() {
   }
 }
 
+// ---------- FILTER ----------
 function applyFilter() {
   const lf = document.getElementById("filterLine").value;
   const ltf = document.getElementById("filterLantai").value;
@@ -115,6 +132,7 @@ function applyFilter() {
   renderList();
 }
 
+// ---------- RENDER LIST ----------
 function renderList() {
   const box = document.getElementById("listRiwayat");
 
@@ -128,59 +146,58 @@ function renderList() {
     const waktu = tgl
       ? tgl.toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })
       : "-";
-    const lokasi = `${escapeHtml(item.lineNama || "-")} · ${escapeHtml(item.lantaiNama || "-")}`;
+    const lokasi = `${escapeHtml(item.lineNama || "-")} · ${escapeHtml(item.lantaiNama || item.area || "-")}`;
+    const canEdit = bolehEdit(item);
+
+    let iconClass = "bi-clipboard";
+    let iconBg = "#eff6ff";
+    let iconColor = "#2563eb";
+    let title = "";
+    let rightHtml = "";
 
     if (item._tipe === "rh") {
-      return `
-        <div class="riwayat-item" onclick="showDetail('${item._id}','rh')">
-          <img class="ri-thumb" src="${item.fotoUrl}" alt="" />
-          <div class="ri-body">
-            <p class="ri-title">RH & Suhu · ${lokasi}</p>
-            <p class="ri-sub">${waktu} · Shift ${item.shift} · ${escapeHtml(item.petugasNama || "-")}</p>
-          </div>
-          <div class="ri-right">
-            <strong>${item.suhu}°C</strong>
-            RH ${item.rh}%
-          </div>
-        </div>
-      `;
+      iconClass = "bi-thermometer-half";
+      iconBg = "#fee2e2"; iconColor = "#b91c1c";
+      title = `RH & Suhu · ${lokasi}`;
+      rightHtml = `<strong>${item.suhu}°C</strong><span>RH ${item.rh}%</span>`;
+    } else if (item._tipe === "brittle") {
+      const total = item.items?.length || 0;
+      const nok = item.items?.filter(i => i.status === "NOK").length || 0;
+      iconClass = "bi-search";
+      iconBg = "#fef3c7"; iconColor = "#b45309";
+      title = `Brittle Glass · ${escapeHtml(item.lineNama)} · ${escapeHtml(item.area)}`;
+      rightHtml = `<strong>${total - nok}/${total}</strong><span>${nok > 0 ? nok + " NOK" : "OK"}</span>`;
+    } else {
+      const total = item.items?.length || 0;
+      const ok = item.items?.filter(i => i.status === "OK").length || 0;
+      const nok = item.items?.filter(i => i.status === "NOK").length || 0;
+      const kat = item.kategori || "area";
+      iconClass = "bi-check2-square";
+      iconBg = kat === "mesin" ? "#fef3c7" : kat === "alat" ? "#dcfce7" : "#eff6ff";
+      iconColor = kat === "mesin" ? "#b45309" : kat === "alat" ? "#15803d" : "#2563eb";
+      title = `Checklist ${KATEGORI_LABEL[kat]} · ${lokasi}`;
+      rightHtml = `<strong>${ok}/${total}</strong><span>${nok > 0 ? nok + " NOK" : "OK"}</span>`;
     }
 
-    if (item._tipe === "brittle") {
-      const thumb = item.fotoUrl
-        ? `<img class="ri-thumb" src="${item.fotoUrl}" alt="" />`
-        : `<div class="ri-icon brittle"><i class="bi bi-shield-check"></i></div>`;
-      return `
-        <div class="riwayat-item" onclick="showDetail('${item._id}','brittle')">
-          ${thumb}
-          <div class="ri-body">
-            <p class="ri-title">Brittle Glass · ${lokasi}</p>
-            <p class="ri-sub">${waktu} · Shift ${item.shift} · ${escapeHtml(item.petugasNama || "-")}</p>
-          </div>
-          <div class="ri-right">
-            <strong style="color:${item.kondisi === 'rusak' ? '#b91c1c' : '#15803d'};">
-              ${item.kondisi}
-            </strong>
-          </div>
-        </div>
-      `;
-    }
-
-    const total = item.items?.length || 0;
-    const terisi = item.items?.filter(i =>
-      i.tipe === "text" ? (i.nilai || "").trim() !== "" : i.nilai === true
-    ).length || 0;
     return `
-      <div class="riwayat-item" onclick="showDetail('${item._id}','checklist')">
-        <div class="ri-icon checklist"><i class="bi bi-check2-square"></i></div>
-        <div class="ri-body">
-          <p class="ri-title">Checklist ${item.kategori === "alat" ? "Alat" : "Kebersihan"} · ${lokasi}</p>
+      <div class="riwayat-item" data-tipe="${item._tipe}">
+        <div class="ri-icon" style="background:${iconBg};color:${iconColor};">
+          <i class="bi ${iconClass}"></i>
+        </div>
+        <div class="ri-body" onclick="showDetail('${item._id}','${item._tipe}')" style="cursor:pointer;">
+          <p class="ri-title">${title}</p>
           <p class="ri-sub">${waktu} · Shift ${item.shift} · ${escapeHtml(item.petugasNama || "-")}</p>
         </div>
-        <div class="ri-right">
-          <strong>${terisi}/${total}</strong>
-          item
+        <div class="ri-right" onclick="showDetail('${item._id}','${item._tipe}')" style="cursor:pointer;">
+          ${rightHtml}
         </div>
+        ${canEdit ? `
+          <div class="ri-actions">
+            <button class="btn-action danger" onclick="hapusData('${item._id}','${item._tipe}')" title="Hapus">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        ` : ""}
       </div>
     `;
   }).join("");
@@ -191,12 +208,40 @@ function renderList() {
   }
 }
 
+// ---------- HAPUS DATA ----------
+window.hapusData = async (id, tipe) => {
+  const item = allData.find(x => x._id === id && x._tipe === tipe);
+  if (!item) return;
+  if (!bolehEdit(item)) return alert("Kamu tidak punya akses untuk hapus ini.");
+
+  const label = item._tipe === "rh" ? "RH & Suhu"
+              : item._tipe === "brittle" ? "Brittle Glass"
+              : "Checklist";
+
+  if (!confirm(`Hapus data ${label} untuk ${item.lineNama} · ${item.lantaiNama || item.area}?\n\nData yang dihapus tidak bisa dikembalikan.`)) return;
+
+  const collMap = {
+    rh: "rhSuhu",
+    brittle: "brittleSubmissions",
+    checklist: "checklistSubmissions",
+  };
+
+  try {
+    await deleteDoc(doc(db, collMap[tipe], id));
+    alert("Data berhasil dihapus.");
+    loadAll();
+  } catch (err) {
+    alert("Gagal hapus: " + err.message);
+  }
+};
+
+// ---------- DETAIL ----------
 window.showDetail = (id, tipe) => {
   const item = allData.find(x => x._id === id && x._tipe === tipe);
   if (!item) return;
   const tgl = item.timestamp?.toDate?.();
   const waktuStr = tgl ? tgl.toLocaleString("id-ID") : "-";
-  const lokasi = `${escapeHtml(item.lineNama || "-")} · ${escapeHtml(item.lantaiNama || "-")}`;
+  const lokasi = `${escapeHtml(item.lineNama || "-")} · ${escapeHtml(item.lantaiNama || item.area || "-")}`;
 
   let body = "";
 
@@ -213,26 +258,50 @@ window.showDetail = (id, tipe) => {
         ${item.catatan ? `<tr><td class="text-muted">Catatan</td><td>${escapeHtml(item.catatan)}</td></tr>` : ""}
       </table>`;
   } else if (tipe === "brittle") {
+    const itemsHtml = (item.items || []).map(i => `
+      <tr>
+        <td>
+          <div class="small text-muted">${escapeHtml(i.lantaiNama || "")}</div>
+          ${escapeHtml(i.posisi)}
+          <div class="small text-muted">Jenis ${escapeHtml(i.jenis)} · Total ${i.total}</div>
+          ${i.keterangan ? `<div class="small text-danger">${escapeHtml(i.keterangan)}</div>` : ""}
+        </td>
+        <td style="width:70px;">
+          ${i.status === "OK" ? '<span class="badge bg-success">OK</span>' : '<span class="badge bg-danger">NOK</span>'}
+          ${i.fotoUrl ? `<div class="mt-1"><a href="${i.fotoUrl}" target="_blank"><i class="bi bi-image"></i></a></div>` : ""}
+        </td>
+      </tr>
+    `).join("");
     body = `
-      ${item.fotoUrl ? `<img src="${item.fotoUrl}" style="width:100%;border-radius:10px;margin-bottom:1rem;" />` : ""}
+      <div class="mb-3">
+        <div class="fw-bold">${escapeHtml(item.lineNama)} · ${escapeHtml(item.area)}</div>
+        <div class="text-muted small">Shift ${item.shift} · ${waktuStr} · ${escapeHtml(item.petugasNama)}</div>
+      </div>
       <table class="table table-sm mb-0">
-        <tr><td class="text-muted">Lokasi</td><td class="fw-semibold">${lokasi}</td></tr>
-        <tr><td class="text-muted">Shift</td><td>Shift ${item.shift}</td></tr>
-        <tr><td class="text-muted">Kondisi</td><td class="fw-semibold" style="color:${item.kondisi === 'rusak' ? '#b91c1c' : '#15803d'};">${item.kondisi}</td></tr>
-        <tr><td class="text-muted">Petugas</td><td>${escapeHtml(item.petugasNama)}</td></tr>
-        <tr><td class="text-muted">Waktu</td><td>${waktuStr}</td></tr>
-        ${item.keterangan ? `<tr><td class="text-muted">Keterangan</td><td>${escapeHtml(item.keterangan)}</td></tr>` : ""}
+        <thead><tr><th>Posisi</th><th>Status</th></tr></thead>
+        <tbody>${itemsHtml}</tbody>
       </table>`;
   } else {
+    const kat = item.kategori || "area";
     const itemsHtml = (item.items || []).map(i => {
-      if (i.tipe === "text") {
-        return `<tr><td style="width:60%;">${escapeHtml(i.label)}</td><td>${i.nilai ? `<span class="fw-semibold">${escapeHtml(i.nilai)}</span>` : '<span class="text-muted">—</span>'}</td></tr>`;
-      }
-      return `<tr><td>${escapeHtml(i.label)}</td><td>${i.nilai ? '<i class="bi bi-check-circle-fill text-success"></i>' : '<i class="bi bi-x-circle text-muted"></i>'}</td></tr>`;
+      const badge = i.status === "OK" ? '<span class="badge bg-success">✓</span>'
+                  : i.status === "NOK" ? '<span class="badge bg-danger">✗</span>'
+                  : '<span class="badge bg-secondary">—</span>';
+      return `<tr>
+        <td>
+          ${escapeHtml(i.label)}
+          ${i.keterangan ? `<div class="small text-muted">${escapeHtml(i.keterangan)}</div>` : ""}
+          ${i.fotoUrl ? `<div class="mt-1"><a href="${i.fotoUrl}" target="_blank"><i class="bi bi-image"></i> Foto</a></div>` : ""}
+        </td>
+        <td style="width:60px;">${badge}</td>
+      </tr>`;
     }).join("");
     body = `
       <div class="mb-3">
-        <div class="fw-bold">${lokasi}</div>
+        <div class="fw-bold">
+          <span class="badge ${KATEGORI_COLOR[kat] || 'bg-secondary'}">${KATEGORI_LABEL[kat] || kat}</span>
+          ${escapeHtml(item.lineNama)} · ${escapeHtml(item.lantaiNama)}
+        </div>
         <div class="text-muted small">Shift ${item.shift} · ${waktuStr} · ${escapeHtml(item.petugasNama)}</div>
       </div>
       <table class="table table-sm mb-0">
@@ -245,6 +314,7 @@ window.showDetail = (id, tipe) => {
   new bootstrap.Modal("#modalDetail").show();
 };
 
+// ---------- TABS ----------
 document.querySelectorAll(".riwayat-tabs button").forEach(btn => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".riwayat-tabs button").forEach(b => b.classList.remove("active"));
@@ -254,10 +324,12 @@ document.querySelectorAll(".riwayat-tabs button").forEach(btn => {
   });
 });
 
+// ---------- FILTER EVENTS ----------
 document.getElementById("btnFilter").addEventListener("click", applyFilter);
 document.getElementById("filterShift").addEventListener("change", applyFilter);
 document.getElementById("filterLantai").addEventListener("change", applyFilter);
 
+// ---------- UTIL ----------
 function escapeHtml(str) {
   if (str == null) return "";
   return String(str)
@@ -268,4 +340,5 @@ function escapeHtml(str) {
     .replaceAll("'", "&#039;");
 }
 
+// ---------- INIT ----------
 await loadAll();

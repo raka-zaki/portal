@@ -2,10 +2,54 @@
    CHECKLIST PAGE
    ============================================ */
 
+/* Status buttons (✓ / ✗ / —) */
+.status-btn-group {
+  display: inline-flex;
+  gap: 0.2rem;
+  flex-shrink: 0;
+}
+
+.status-btn {
+  width: 38px;
+  height: 38px;
+  border: 1.5px solid #e2e8f0;
+  background: #fff;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: #94a3b8;
+  display: grid;
+  place-items: center;
+}
+
+.status-btn:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.status-btn.active.skip {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #475569;
+}
+
+.status-btn.active.ok {
+  background: #dcfce7;
+  border-color: #16a34a;
+  color: #15803d;
+}
+
+.status-btn.active.nok {
+  background: #fee2e2;
+  border-color: #dc2626;
+  color: #b91c1c;
+}
+
+/* Checklist item */
 .checklist-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.85rem;
+  display: block;
   padding: 0.85rem 1rem;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
@@ -14,39 +58,17 @@
   transition: border-color 0.15s, background 0.15s;
 }
 
-.checklist-item:hover {
-  border-color: #cbd5e1;
-}
-
-.checklist-item.checked {
-  background: #f0fdf4;
-  border-color: #86efac;
-}
-
-.checklist-item .form-check-input {
-  width: 1.3em;
-  height: 1.3em;
-  margin-top: 0.15rem;
-  flex-shrink: 0;
-  cursor: pointer;
-}
-
-.checklist-item .form-check-input:checked {
-  background-color: #10b981;
-  border-color: #10b981;
-}
-
-.checklist-item .item-content {
-  flex: 1;
-  min-width: 0;
+.checklist-item.nok {
+  background: #fef2f2;
+  border-color: #fecaca;
 }
 
 .checklist-item .item-label {
   font-size: 0.88rem;
   font-weight: 500;
   color: #0f172a;
-  margin: 0 0 0.2rem;
-  cursor: pointer;
+  margin: 0;
+  line-height: 1.4;
 }
 
 .checklist-item .item-order {
@@ -54,6 +76,18 @@
   color: #94a3b8;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  margin-top: 0.35rem;
+}
+
+.checklist-item .ket-input {
+  font-size: 0.85rem;
+  border-radius: 7px;
+  border-color: #e2e8f0;
+}
+
+.checklist-item .ket-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .checklist-item .form-control {
@@ -66,21 +100,6 @@
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
-
-/* Header info */
-.info-banner {
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 10px;
-  padding: 0.75rem 1rem;
-  font-size: 0.8rem;
-  color: #1d4ed8;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-.info-banner i { font-size: 1.1rem; }
 
 /* Submit bar */
 .submit-bar {
@@ -96,59 +115,345 @@
   gap: 1rem;
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
   margin-top: 1rem;
+  z-index: 100;
 }
 
 .submit-bar .progress-info {
   font-size: 0.82rem;
   color: #64748b;
 }
+
 .submit-bar .progress-info strong {
   color: #0f172a;
 }
 
-/* Riwayat checklist */
+/* ============================================
+   RIWAYAT HARI INI — CARD DESIGN
+   ============================================ */
 .cl-history-item {
-  padding: 1rem;
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.85rem 0.9rem;
   border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  margin-bottom: 0.5rem;
+  border-radius: 12px;
+  margin-bottom: 0.6rem;
   background: #fff;
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
+  transition: all 0.18s ease;
+  position: relative;
+  overflow: hidden;
 }
+
+.cl-history-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #3b82f6;
+  transition: width 0.18s ease;
+}
+
+.cl-history-item[data-kat="mesin"]::before { background: #f59e0b; }
+.cl-history-item[data-kat="alat"]::before  { background: #10b981; }
+
 .cl-history-item:hover {
   border-color: #cbd5e1;
-  background: #fafbfc;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
 }
 
-.cl-history-item .cl-head {
+.cl-history-item:hover::before {
+  width: 6px;
+}
+
+/* Ikon kategori */
+.cl-history-item .cl-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  font-size: 1.1rem;
+  background: #eff6ff;
+  color: #2563eb;
+}
+.cl-history-item[data-kat="mesin"] .cl-icon { background: #fef3c7; color: #b45309; }
+.cl-history-item[data-kat="alat"]  .cl-icon { background: #dcfce7; color: #15803d; }
+
+/* Body */
+.cl-history-item .cl-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.cl-history-item .cl-row1 {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.35rem;
-  flex-wrap: wrap;
+  margin-bottom: 0.25rem;
 }
 
+.cl-history-item .cl-kat-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: #eff6ff;
+  color: #2563eb;
+  flex-shrink: 0;
+}
+.cl-history-item[data-kat="mesin"] .cl-kat-badge { background: #fef3c7; color: #b45309; }
+.cl-history-item[data-kat="alat"]  .cl-kat-badge { background: #dcfce7; color: #15803d; }
+
 .cl-history-item .cl-title {
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: #0f172a;
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
 }
 
 .cl-history-item .cl-sub {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   color: #64748b;
-  margin: 0;
+  margin: 0 0 0.4rem;
 }
 
 .cl-history-item .cl-stats {
-  font-size: 0.75rem;
-  color: #64748b;
-  margin-top: 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  font-size: 0.72rem;
 }
 
-.cl-history-item .cl-stats strong {
+.cl-history-item .stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+.cl-history-item .stat-pill.ok  { background: #f0fdf4; color: #15803d; }
+.cl-history-item .stat-pill.nok { background: #fef2f2; color: #b91c1c; }
+.cl-history-item .stat-pill.total { background: #f1f5f9; color: #475569; }
+
+.cl-history-item .edited-tag {
+  font-size: 0.62rem;
+  color: #b45309;
+  background: #fef3c7;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+/* Actions */
+.cl-history-item .cl-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.cl-history-item .btn-action {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #64748b;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 0.8rem;
+  padding: 0;
+}
+
+.cl-history-item .btn-action:hover {
+  border-color: #3b82f6;
+  color: #3b82f6;
+  background: #eff6ff;
+  transform: translateY(-1px);
+}
+
+.cl-history-item .btn-action.danger:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+  background: #fef2f2;
+}
+
+/* Mode edit form */
+.form-card.editing {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
+.editing-badge {
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  margin-left: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Info banner */
+.info-banner {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  font-size: 0.8rem;
+  color: #1d4ed8;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.info-banner i {
+  font-size: 1.1rem;
+}
+/* ============================================
+   TAB KATEGORI CHECKLIST
+   ============================================ */
+.checklist-tabs {
+  display: flex;
+  gap: 0.35rem;
+  background: #f8fafc;
+  padding: 0.35rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+}
+
+.checklist-tab {
+  flex: 1;
+  min-width: fit-content;
+  background: transparent;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 7px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.checklist-tab:hover {
+  background: #e2e8f0;
   color: #0f172a;
+}
+
+.checklist-tab.active {
+  background: #3b82f6;
+  color: #fff;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+.checklist-tab .tab-count {
+  background: rgba(0, 0, 0, 0.1);
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.checklist-tab.active .tab-count {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.checklist-tab.done {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.checklist-tab.done.active {
+  background: #16a34a;
+  color: #fff;
+}
+/* ============================================
+   TOMBOL EDIT/HAPUS DI RIWAYAT
+   ============================================ */
+.cl-history-item {
+  position: relative;
+}
+
+.cl-history-item .cl-actions {
+  display: flex;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.cl-history-item .btn-action {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #64748b;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 0.8rem;
+  padding: 0;
+}
+
+.cl-history-item .btn-action:hover {
+  border-color: #3b82f6;
+  color: #3b82f6;
+  background: #eff6ff;
+}
+
+.cl-history-item .btn-action.danger:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+  background: #fef2f2;
+}
+
+.cl-history-item .edited-tag {
+  font-size: 0.68rem;
+  color: #f59e0b;
+  font-weight: 600;
+  margin-left: 0.35rem;
+}
+
+/* Mode edit form */
+.form-card.editing {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
+.editing-badge {
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  margin-left: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }

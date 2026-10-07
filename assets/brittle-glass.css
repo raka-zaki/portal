@@ -2,63 +2,190 @@
    BRITTLE GLASS PAGE
    ============================================ */
 
-/* Reuse .form-card, .foto-drop, .foto-preview, .history-item dari rh-suhu.css */
-/* Tambahan khusus di sini */
-
-.kondisi-toggle {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+/* Group per lantai */
+.lantai-group {
+  margin-bottom: 1.25rem;
 }
 
-.kondisi-toggle input {
-  display: none;
-}
-
-.kondisi-toggle label {
-  padding: 0.85rem 1rem;
-  border: 2px solid #e2e8f0;
-  border-radius: 10px;
-  text-align: center;
-  cursor: pointer;
+.lantai-header {
+  background: #eff6ff;
+  border-left: 4px solid #3b82f6;
+  padding: 0.5rem 0.85rem;
+  border-radius: 6px;
   font-size: 0.85rem;
-  font-weight: 600;
-  color: #64748b;
-  transition: all 0.15s;
+  font-weight: 700;
+  color: #1e40af;
+  margin-bottom: 0.5rem;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.5rem;
 }
 
-.kondisi-toggle label i {
-  font-size: 1.4rem;
+.lantai-header .lantai-count {
+  font-weight: 400;
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-left: auto;
 }
 
-.kondisi-toggle label:hover {
+/* Row item */
+.brittle-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  margin-bottom: 0.5rem;
+  background: #fff;
+  align-items: start;
+}
+
+.brittle-row.nok {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.brittle-row .info {
+  min-width: 0;
+}
+
+.brittle-row .posisi {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: #0f172a;
+  margin: 0;
+}
+
+.brittle-row .meta {
+  font-size: 0.72rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.brittle-row .ket-input {
+  font-size: 0.82rem;
+  border-radius: 6px;
+  border-color: #e2e8f0;
+}
+
+.brittle-row .ket-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.brittle-row .foto-input {
+  font-size: 0.78rem;
+  border-radius: 6px;
+  border-color: #e2e8f0;
+}
+
+.brittle-row .status-group {
+  display: inline-flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.brittle-row .status-btn {
+  padding: 0.35rem 0.75rem;
+  border: 1.5px solid #e2e8f0;
+  background: #fff;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: #94a3b8;
+  transition: all 0.15s;
+  min-width: 50px;
+}
+
+.brittle-row .status-btn:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.brittle-row .status-btn.active.ok {
+  background: #dcfce7;
+  border-color: #16a34a;
+  color: #15803d;
+}
+
+.brittle-row .status-btn.active.nok {
+  background: #fee2e2;
+  border-color: #dc2626;
+  color: #b91c1c;
+}
+
+/* Riwayat */
+.bg-history-item {
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  margin-bottom: 0.5rem;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.bg-history-item:hover {
   border-color: #cbd5e1;
   background: #fafbfc;
 }
 
-.kondisi-toggle input[value="aman"]:checked + label {
-  border-color: #10b981;
-  background: #ecfdf5;
-  color: #047857;
+.bg-history-item .cl-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+  flex-wrap: wrap;
 }
 
-.kondisi-toggle input[value="rusak"]:checked + label {
-  border-color: #ef4444;
-  background: #fef2f2;
-  color: #b91c1c;
+.bg-history-item .cl-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
 }
 
-.kondisi-badge {
-  font-size: 0.68rem;
-  padding: 3px 8px;
-  border-radius: 999px;
-  font-weight: 700;
-  text-transform: uppercase;
+.bg-history-item .cl-sub {
+  font-size: 0.72rem;
+  color: #64748b;
+  margin: 0;
 }
-.kondisi-badge.aman  { background: #dcfce7; color: #15803d; }
-.kondisi-badge.rusak { background: #fee2e2; color: #b91c1c; }
+
+.bg-history-item .cl-stats {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 0.4rem;
+}
+
+.bg-history-item .cl-stats strong {
+  color: #0f172a;
+}
+
+/* Submit bar */
+.submit-bar {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  position: sticky;
+  bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+  margin-top: 1rem;
+  z-index: 100;
+}
+
+.submit-bar .progress-info {
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.submit-bar .progress-info strong {
+  color: #0f172a;
+}
